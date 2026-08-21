@@ -73,6 +73,11 @@ function tecmap = parse_map(tecmap_str)
     if length(tec_values) == expected_count
         % Reshape: IONEX stores data as [lon1...lon73] for each lat
         tecmap = reshape(tec_values, n_lon, n_lat)';
+        
+        % IONEX format: TEC values are in 0.1 TECU units; 9999 indicates no value
+        % Convert to TECU and replace missing values with NaN
+        tecmap(tecmap == 9999) = NaN;  % Mark missing values
+        tecmap = tecmap .* 0.1;         % Convert from 0.1 TECU to TECU
     else
         error('parse_map:badsize', ...
             'Expected %d TEC values (71×73), got %d', expected_count, length(tec_values));

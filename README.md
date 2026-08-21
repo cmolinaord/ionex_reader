@@ -61,7 +61,7 @@ ds = read_ionex(filepath);
 ds = read_ionex('codg0010.21i');
 
 % Access TEC data (latitude × longitude × time)
-tec = ds.tec;          % TEC values in TECU
+tec = ds.tec;          % TEC values in TECU (automatically converted from IONEX format: 0.1 TECU)
 rms = ds.rms;          % RMS error estimates
 time = ds.time;        % Datetime array of epochs
 lat = ds.latitude;     % Latitude grid

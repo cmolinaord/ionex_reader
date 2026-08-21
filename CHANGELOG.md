@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-08-21
+
+### Fixed
+- **TEC unit conversion**: IONEX maps now correctly convert from 0.1 TECU (file format) to TECU (output values)
+- Missing value handling: Values marked as 9999 in IONEX files are now replaced with NaN
+- Updated documentation to reflect automatic unit conversion in output
+
+### Technical Details
+- Modified `parse_map.m`: Applies 0.1× scaling factor and NaN replacement per IONEX 1.0 specification
+- Output `.tec` field now directly provides values in TECU units without user conversion
+
 ## [0.1.0] - 2026-08-21
 
 ### Added
