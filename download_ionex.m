@@ -41,6 +41,9 @@ function filepath = download_ionex(target_date, varargin)
 % UPC-IEEC
 % 21-Aug-2026
 
+    % Display version
+    fprintf('IONEX Reader v%s - Download Module\n', get_version());
+    
     % Validate target date
     if ~isdatetime(target_date) && ~ischar(target_date) && ~isstring(target_date)
         error('Input must be a datetime object or date string.');

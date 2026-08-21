@@ -8,6 +8,13 @@ function tecmap = parse_map(tecmap_str)
 % UPC-IEEC
 % 20-Aug-2026
     
+    % Display version (first call only - using persistent flag)
+    persistent version_displayed;
+    if isempty(version_displayed)
+        fprintf('IONEX Reader v%s - Parse Module\n', get_version());
+        version_displayed = true;
+    end
+    
     % Cut at END OF TEC MAP to exclude trailing content
     end_idx = strfind(tecmap_str, 'END OF TEC MAP');
     if ~isempty(end_idx)
