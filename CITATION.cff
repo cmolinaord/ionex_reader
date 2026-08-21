@@ -10,6 +10,9 @@ authors:
     orcid: "https://orcid.org/0000-0003-0300-4106"  # Add your ORCID if available
 repository-code: "https://github.com/cmolinaord/ionex_reader"
 url: "https://github.com/cmolinaord/ionex_reader"
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.22042973
 abstract: "MATLAB toolbox for reading and parsing IONEX (IONosphere Map EXchange) files with automatic download capabilities from NASA CDDIS archive. Extracts global TEC maps, RMS estimates, and temporal information for ionospheric research."
 keywords:
   - IONEX

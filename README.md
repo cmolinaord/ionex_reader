@@ -1,5 +1,7 @@
 # IONEX Reader for MATLAB
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22042973.svg)](https://doi.org/10.5281/zenodo.22042973)
+
 MATLAB toolbox for reading and parsing IONEX (IONosphere Map EXchange) files. IONEX is a standard format used by the International GNSS Service (IGS) to distribute global ionospheric Total Electron Content (TEC) maps.
 
 **Quick Start**: See [QUICKSTART.md](QUICKSTART.md) for 3-minute setup guide.
