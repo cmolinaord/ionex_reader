@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use this software in your research, please cite it as below."
+title: "IONEX Reader for MATLAB"
+type: software
+authors:
+  - family-names: "Molina"
+    given-names: "Carlos"
+    email: carlos.molina@upc.edu
+    affiliation: "UPC-IEEC (Universitat Politècnica de Catalunya, Institut d'Estudis Espacials de Catalunya)"
+    orcid: "https://orcid.org/0000-0003-0300-4106"  # Add your ORCID if available
+repository-code: "https://github.com/cmolinaord/ionex_reader"
+url: "https://github.com/cmolinaord/ionex_reader"
+abstract: "MATLAB toolbox for reading and parsing IONEX (IONosphere Map EXchange) files with automatic download capabilities from NASA CDDIS archive. Extracts global TEC maps, RMS estimates, and temporal information for ionospheric research."
+keywords:
+  - IONEX
+  - ionosphere
+  - TEC
+  - GNSS
+  - space weather
+  - MATLAB
+license: BSD-3-Clause
+version: 1.0.0
+date-released: 2026-08-20

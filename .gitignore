@@ -1,0 +1,16 @@
+# MATLAB temporary files
+*.asv
+*.m~
+*.mex*
+*.autosave
+
+# Data cache (IONEX downloads)
+data/
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+*.code-workspace
