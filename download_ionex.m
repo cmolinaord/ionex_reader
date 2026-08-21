@@ -27,12 +27,19 @@ function filepath = download_ionex(target_date, varargin)
 %
 % NOTES:
 %   - Requires NASA Earthdata credentials (register at urs.earthdata.nasa.gov)
+%   - Credentials stored in .netrc file (created automatically)
+%   - Uses wget for downloads (handles OAuth authentication properly)
 %   - Downloaded files are cached in data/ directory
 %   - Automatically extracts .gz files
 %
+% SYSTEM REQUIREMENTS:
+%   - wget must be installed
+%   - Linux/macOS: pre-installed or install via package manager
+%   - Windows: Use WSL or download from gnu.org/software/wget/
+%
 % Carlos Molina
 % UPC-IEEC
-% 20-Aug-2026
+% 21-Aug-2026
 
     % Validate target date
     if ~isdatetime(target_date) && ~ischar(target_date) && ~isstring(target_date)
@@ -81,19 +88,13 @@ function filepath = download_ionex(target_date, varargin)
     base_url = 'https://cddis.nasa.gov/archive/gnss/products/ionosphere';
     remote_url = sprintf('%s/%04d/%03d/%s', base_url, yyyy, doy, filename);
     
-    % Get credentials
+    % Get credentials and ensure .netrc file exists
     [username, password] = get_earthdata_credentials(opts.Username, opts.Password);
+    setup_netrc_file(username, password);
     
-    % Download file with retry logic
+    % Download file using curl (handles OAuth redirects properly)
     fprintf('Downloading: %s\n', filename);
     gz_file = fullfile(local_dir, filename);
-    
-    % Configure web options with proper User-Agent
-    web_opts = weboptions('Username', username, ...
-                          'Password', password, ...
-                          'Timeout', 180, ...
-                          'UserAgent', 'MATLAB-IONEX-Reader/1.0 (carlos.molina@upc.edu)', ...
-                          'ContentType', 'auto');
     
     % Retry logic with exponential backoff
     max_retries = 3;
@@ -107,14 +108,15 @@ function filepath = download_ionex(target_date, varargin)
                 retry_delay = retry_delay * 2;  % Exponential backoff
             end
             
-            websave(gz_file, remote_url, web_opts);
+            % Use wget with .netrc authentication (handles OAuth properly)
+            download_with_wget(remote_url, gz_file);
             fprintf('Download complete.\n');
             break;  % Success, exit retry loop
             
         catch ME
             if attempt == max_retries
                 % Final attempt failed, provide detailed error
-                if contains(ME.message, 'timed out') || contains(ME.message, 'Timeout')
+                if contains(ME.message, 'timed out') || contains(ME.message, 'Timeout') || contains(ME.message, 'Operation too slow')
                     error(['Download failed: Connection timeout\n' ...
                            'This may indicate:\n' ...
                            '  1. Network congestion or slow connection\n' ...
@@ -130,14 +132,16 @@ function filepath = download_ionex(target_date, varargin)
                            'Possible causes:\n' ...
                            '  1. CDDIS application not authorized in Earthdata account\n' ...
                            '  2. Invalid credentials\n' ...
-                           'Visit: https://urs.earthdata.nasa.gov → Applications → Authorize CDDIS\n' ...
+                           'Solutions:\n' ...
+                           '  - Visit: https://urs.earthdata.nasa.gov → Applications → Authorize CDDIS\n' ...
+                           '  - Check .netrc file in home directory\n' ...
                            'URL: %s'], remote_url);
                 elseif contains(ME.message, '401') || contains(ME.message, 'Unauthorized')
                     error(['Download failed: Unauthorized (401)\n' ...
-                           'Check credentials:\n' ...
+                           'Check credentials in .netrc file:\n' ...
                            '  Username: %s\n' ...
-                           '  Password: (hidden)\n' ...
-                           'URL: %s'], username, remote_url);
+                           '  File: %s\n' ...
+                           'URL: %s'], username, fullfile(get_home_dir(), '.netrc'), remote_url);
                 elseif contains(ME.message, '404') || contains(ME.message, 'Not Found')
                     error(['Download failed: File Not Found (404)\n' ...
                            'Date: %s (DoY %03d)\n' ...
@@ -192,5 +196,148 @@ function [username, password] = get_earthdata_credentials(user_input, pass_input
                '  export EARTHDATA_USER=your_username\n' ...
                '  export EARTHDATA_PASS=your_password\n' ...
                'Register at: https://urs.earthdata.nasa.gov']);
+    end
+end
+
+function setup_netrc_file(username, password)
+    % Create or update .netrc file for curl authentication
+    % Format: machine urs.earthdata.nasa.gov login <user> password <pass>
+    
+    home_dir = get_home_dir();
+    netrc_file = fullfile(home_dir, '.netrc');
+    
+    % Define the required entry
+    required_machine = 'urs.earthdata.nasa.gov';
+    required_entry = sprintf('machine %s login %s password %s', required_machine, username, password);
+    
+    % Check if .netrc exists and has correct entry
+    if exist(netrc_file, 'file')
+        content = fileread(netrc_file);
+        
+        % Check if our machine is already configured
+        if contains(content, required_machine)
+            % Parse existing entry
+            pattern = sprintf('machine\\s+%s\\s+login\\s+(\\S+)\\s+password\\s+(\\S+)', required_machine);
+            tokens = regexp(content, pattern, 'tokens');
+            
+            if ~isempty(tokens)
+                existing_user = tokens{1}{1};
+                existing_pass = tokens{1}{2};
+                
+                % If credentials match, nothing to do
+                if strcmp(existing_user, username) && strcmp(existing_pass, password)
+                    return;
+                else
+                    % Update existing entry
+                    old_entry = sprintf('machine %s login %s password %s', required_machine, existing_user, existing_pass);
+                    content = strrep(content, old_entry, required_entry);
+                end
+            end
+        else
+            % Append new machine entry
+            if ~endsWith(content, newline)
+                content = [content newline];
+            end
+            content = [content required_entry newline];
+        end
+    else
+        % Create new .netrc file
+        content = [required_entry newline];
+    end
+    
+    % Write .netrc file
+    fid = fopen(netrc_file, 'w');
+    if fid == -1
+        error('Cannot create .netrc file: %s', netrc_file);
+    end
+    fprintf(fid, '%s', content);
+    fclose(fid);
+    
+    % Set proper permissions (read/write for owner only)
+    if isunix || ismac
+        [status, ~] = system(sprintf('chmod 600 "%s"', netrc_file));
+        if status ~= 0
+            warning('Could not set permissions on .netrc file. Run: chmod 600 %s', netrc_file);
+        end
+    end
+end
+
+function home_dir = get_home_dir()
+    % Get user's home directory (cross-platform)
+    
+    if ispc
+        home_dir = getenv('USERPROFILE');
+    else
+        home_dir = getenv('HOME');
+    end
+    
+    if isempty(home_dir)
+        error('Cannot determine home directory');
+    end
+end
+
+function download_with_wget(url, output_file)
+    % Download file using wget with .netrc authentication
+    % This properly handles NASA Earthdata OAuth redirects
+    
+    % Verify .netrc exists
+    netrc_file = fullfile(get_home_dir(), '.netrc');
+    if ~exist(netrc_file, 'file')
+        error('.netrc file not found: %s\nThis should have been created automatically.', netrc_file);
+    end
+    
+    % Build wget command with NASA CDDIS recommended flags
+    % --auth-no-challenge: send credentials from .netrc proactively
+    download_cmd = sprintf(['wget --auth-no-challenge ' ...
+                            '--user-agent="MATLAB-IONEX-Reader/1.0" ' ...
+                            '-O "%s" "%s"'], output_file, url);
+    
+    % Unset LD_LIBRARY_PATH on Unix to avoid MATLAB library conflicts
+    if isunix
+        download_cmd = sprintf('unset LD_LIBRARY_PATH; %s', download_cmd);
+    end
+    
+    % Execute wget
+    [status, output] = system(download_cmd);
+    
+    if status ~= 0
+        % Parse wget error codes
+        if contains(output, '401') || contains(output, 'Unauthorized')
+            error('HTTP 401 Unauthorized: Check credentials in .netrc file.');
+        elseif contains(output, '403') || contains(output, 'Forbidden')
+            error('HTTP 403 Forbidden: Authorize CDDIS in Earthdata account.');
+        elseif contains(output, '404') || contains(output, 'Not Found')
+            error('HTTP 404 Not Found: File does not exist on server.');
+        elseif contains(output, 'certificate') || contains(output, 'SSL')
+            error('SSL/TLS error: %s', output);
+        else
+            error('wget failed (exit code %d): %s', status, output);
+        end
+    end
+    
+    % Verify downloaded file exists and is not empty
+    if ~exist(output_file, 'file')
+        error('Download completed but file not found: %s', output_file);
+    end
+    
+    file_info = dir(output_file);
+    if file_info.bytes == 0
+        delete(output_file);
+        error('Downloaded file is empty (0 bytes)');
+    end
+    
+    % Check if file is HTML (common error when auth fails)
+    fid = fopen(output_file, 'r');
+    header = fread(fid, min(1024, file_info.bytes), '*char')';
+    fclose(fid);
+    
+    if contains(header, '<html') || contains(header, '<!DOCTYPE')
+        delete(output_file);
+        error(['Downloaded HTML instead of binary file.\n' ...
+               'This indicates authentication failure.\n' ...
+               'Solutions:\n' ...
+               '  1. Verify Earthdata credentials\n' ...
+               '  2. Authorize CDDIS at: https://urs.earthdata.nasa.gov\n' ...
+               '  3. Check .netrc file: %s'], fullfile(get_home_dir(), '.netrc'));
     end
 end

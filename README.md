@@ -41,6 +41,7 @@ setenv('EARTHDATA_USER', 'your_username');
 setenv('EARTHDATA_PASS', 'your_password');
 
 % Download IONEX file for specific date
+% The system automatically creates .netrc for authentication
 filepath = download_ionex(datetime('2026-01-03'));
 
 % Read downloaded file
@@ -48,6 +49,8 @@ ds = read_ionex(filepath);
 ```
 
 **Credential Setup**: See [EARTHDATA_SETUP.md](EARTHDATA_SETUP.md) for detailed registration and configuration instructions.
+
+**Technical Details**: Downloads use `wget` with `.netrc` authentication to properly handle NASA's OAuth flow.
 
 ### Local File Reading
 
@@ -123,9 +126,14 @@ IONEX files are available from:
 ## Requirements
 
 - MATLAB R2019b or later (uses `arguments` validation)
-- No additional toolboxes required
+- **wget** (for automatic downloads)
+  - Pre-installed on most Linux/macOS systems
+  - Linux: `sudo apt install wget`
+  - macOS: `brew install wget`
+  - Windows: Use WSL or download from [gnu.org/software/wget](https://www.gnu.org/software/wget/)
+- No additional MATLAB toolboxes required
 - Internet connection for automatic downloads
-- NASA Earthdata account (free registration)
+- NASA Earthdata account (free registration at [urs.earthdata.nasa.gov](https://urs.earthdata.nasa.gov))
 
 ## Applications
 

@@ -4,16 +4,20 @@
 %
 % Carlos Molina
 % UPC-IEEC
-% 20-Aug-2026
+% 21-Aug-2026
 
 %% Setup credentials (first time only)
+% The system automatically creates a .netrc file for authentication
+%
 % Option 1: Set environment variables in terminal before launching MATLAB
 %   export EARTHDATA_USER=your_username
 %   export EARTHDATA_PASS=your_password
-
+%
 % Option 2: Provide credentials directly (not recommended for scripts in repos)
 %   username = 'your_username';
 %   password = 'your_password';
+%
+% NOTE: Requires wget to be installed
 
 %% Download IONEX file for specific date
 target_date = datetime('2026-01-03');

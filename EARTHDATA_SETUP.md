@@ -18,6 +18,8 @@ Automatic download from NASA CDDIS archive requires free registration at NASA Ea
 
 ## Credential Configuration
 
+The download system automatically creates a `.netrc` file for secure authentication with NASA's servers using wget.
+
 ### Option 1: Environment Variables (Recommended)
 
 **Linux/macOS:**
@@ -50,6 +52,16 @@ filepath = download_ionex(datetime('2026-01-03'), ...
 
 ⚠️ **Security Warning**: Never commit credentials to Git repositories.
 
+### About .netrc File
+
+The system automatically manages a `.netrc` file in your home directory:
+- **Location**: `~/.netrc` (Linux/macOS) or `%USERPROFILE%\.netrc` (Windows)
+- **Format**: `machine urs.earthdata.nasa.gov login <user> password <pass>`
+- **Permissions**: Automatically set to 600 (owner read/write only)
+- **Purpose**: Used by wget for authentication with NASA Earthdata
+
+You **don't need to create this file manually** — `download_ionex()` handles it automatically.
+
 ## Verification
 
 Test credentials:
@@ -66,14 +78,30 @@ If authentication fails, verify:
 
 ## Troubleshooting
 
-**Error: "Download failed: Forbidden (403)"**
-- Solution: Authorize CDDIS application in Earthdata profile
+**Error: "wget not found"**
+- Solution: Install wget
+  - Linux: `sudo apt install wget`
+  - macOS: `brew install wget`
+  - Windows: Use WSL or download from [gnu.org/software/wget](https://www.gnu.org/software/wget/)
 
-**Error: "Download failed: Unauthorized (401)"**
-- Solution: Verify username/password
+**Error: "HTTP 401 Unauthorized" or "HTTP 403 Forbidden"**
+- Solution: Verify credentials and authorize CDDIS
+  1. Check .netrc file: `cat ~/.netrc`
+  2. Verify permissions: `chmod 600 ~/.netrc`
+  3. Authorize CDDIS: https://urs.earthdata.nasa.gov → Applications → Authorize Apps
 
-**Error: "Download failed: Not Found (404)"**
+**Error: "Downloaded HTML instead of binary file"**
+- Solution: Authentication failed silently
+  1. Verify credentials: `cat ~/.netrc` (Linux/macOS)
+  2. Authorize CDDIS: https://urs.earthdata.nasa.gov → Applications
+  3. Check environment variables are set correctly
+
+**Error: "HTTP 404 Not Found"**
 - Solution: Check date validity and product availability
+
+**Error: "Could not set permissions on .netrc file"**
+- Solution (Linux/macOS): Run manually: `chmod 600 ~/.netrc`
+- Note: This is a security warning, not critical for functionality
 
 ## Data Access Policy
 
@@ -82,4 +110,6 @@ NASA CDDIS data is freely available for scientific research under NASA's Earth S
 ## References
 
 - [NASA Earthdata Registration](https://urs.earthdata.nasa.gov)
-- [CDDIS Archive Guide](https://cddis.nasa.gov/Data_and_Derived_Products/GNSS/atmospheric_products.html)
+- [CDDIS Archive Access Guide](https://www.earthdata.nasa.gov/centers/cddis-daac/archive-access)
+- [CDDIS .netrc Setup](https://cddis.nasa.gov/Data_and_Derived_Products/CreateNetrcFile.html)
+- [CDDIS GNSS/Ionosphere Products](https://cddis.nasa.gov/Data_and_Derived_Products/GNSS/atmospheric_products.html)
